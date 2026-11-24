@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f5f6f5">
+  <meta name="description" content="可编辑、可回放的图搜索实验台。理解 A*，比较八种经典算法，观察每一步搜索决策。">
+  <title>图搜索实验室 · A* 与经典算法</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="search.js"></script>
+  <script defer src="presets.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳转到实验区</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#lab" aria-label="图搜索实验室首页"><span class="brand-symbol" aria-hidden="true">G<span>·</span></span><span>图搜索实验室<small>GRAPH SEARCH LAB</small></span></a>
+      <nav class="main-nav" aria-label="主导航">
+        <button type="button" id="nav-lab" class="nav-link selected" aria-current="page">A* 实验台</button>
+        <button type="button" id="nav-compare" class="nav-link compare-link">算法对比 <span aria-hidden="true">↗</span></button>
+      </nav>
+      <a class="report-link" href="https://github.com/luxiaoyu7548/graph-search-playground/blob/main/docs/report.md" target="_blank" rel="noopener">实验报告 <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+  <main id="main" class="app-shell">
+    <section class="page-intro" aria-labelledby="page-heading">
+      <div class="intro-label"><span class="status-dot" aria-hidden="true"></span> 人工智能导论 · 交互实验</div>
+      <h1 id="page-heading">看见 A* 的每一步决策<span class="heading-period">.</span></h1>
+      <p id="page-copy">从起点到终点，观察代价与启发式如何引导搜索。编辑一张地图，再亲手验证你的直觉。</p>
+    </section>
+    <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+    <section id="compare-view" class="compare-view" aria-label="算法比较">
+      <div id="compare-controls" class="compare-controls panel" hidden></div>
+      <div id="compare-results" class="compare-results" hidden></div>
+    </section>
+    <section id="lab-view" aria-label="算法实验台">
+      <div id="lab-settings" class="settings-bar"></div>
+      <div id="workspace" class="workspace">
+        <section class="board-panel panel" aria-label="搜索地图与回放">
+          <div class="board-header"><div class="board-title"><span class="mini-label">搜索空间</span><h2>在地图上探索</h2></div><div id="preset-bar" class="preset-bar toolbar"></div></div>
+          <div id="plot-tools" class="plot-tools toolbar" aria-label="地图绘制工具"></div>
+          <section id="editor-panel" class="editor-panel" aria-label="节点和边编辑" hidden></section>
+          <div id="playback" class="playback" aria-label="算法回放控制"></div>
+          <div class="board-stage"><div id="board" class="board" aria-label="可编辑搜索地图"></div></div>
+          <div id="legend" class="legend" aria-label="地图图例"></div>
+
+        </section>
+        <aside class="inspector-column" aria-label="算法状态">
+          <section id="summary" class="summary panel" aria-label="搜索结果摘要"></section>
+          <section id="inspector" class="inspector panel" aria-label="逐步解释与节点状态"></section>
+        </aside>
+      </div>
+    </section>
+    <noscript><p class="notice">请启用浏览器 JavaScript 以运行图搜索实验。所有算法均在本地运行。</p></noscript>
+  </main>
+  <input id="import-file" type="file" accept="application/json,.json" hidden>
+  <dialog id="preset-manager" class="modal" aria-labelledby="preset-manager-title">
+    <div class="modal-heading"><h2 id="preset-manager-title">管理地图预设</h2><button id="preset-manager-close" class="button quiet" type="button" aria-label="关闭预设管理">关闭</button></div>
+    <p class="hint">地图保存在当前浏览器中。导出 JSON，可在其他设备继续实验。</p>
+    <div id="preset-options"></div>
+  </dialog>
+  <dialog id="preset-dialog" class="modal" aria-labelledby="dialog-title">
+    <form id="preset-form">
+      <h2 id="dialog-title">保存预设</h2>
+      <div id="dialog-input-wrap" class="field"><label for="dialog-name" id="dialog-label">预设名称</label><input id="dialog-name" type="text" maxlength="40" required autocomplete="off"></div>
+      <p id="dialog-description" hidden></p>
+      <div class="modal-actions"><button id="dialog-cancel" type="button" class="button">取消</button><button id="dialog-accept" type="submit" class="button primary">保存</button></div>
+    </form>
+  </dialog>
+</body>
+</html>

@@ -1,0 +1,21 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const api = require('../search.js');
+let checks = 0;
+function check(name, run) { run(); checks++; console.log('✓ ' + name); }
+const grid = { type: 'grid', cols: 5, rows: 3, cells: ['plain','plain','plain','plain','plain','plain','mud','mud','mud','plain','plain','plain','plain','plain','plain'], start: 5, goal: 9 };
+const graph = { type: 'graph', nodes: ['a','b','c','d','e'].map((id,x) => ({ id, x, y: 0 })), edges: [{id:'ab',a:'a',b:'b',weight:4},{id:'ac',a:'a',b:'c',weight:1},{id:'cb',a:'c',b:'b',weight:1},{id:'bd',a:'b',b:'d',weight:2},{id:'cd',a:'c',b:'d',weight:8}], start:'a',goal:'b' };
+check('classic browser script exposes GraphSearch', () => { const context = { window: {} }; vm.runInNewContext(fs.readFileSync(require.resolve('../search.js'), 'utf8'), context); assert.equal(typeof context.window.GraphSearch.search, 'function'); });
+check('BFS minimizes moves and reports terrain cost', () => { const r=api.search(grid,'bfs').result; assert.equal(r.path.length,5); assert.equal(r.cost,16); });
+check('weighted algorithms avoid mud', () => { for(const algorithm of ['astar','ucs','dijkstra']) { const t=api.search(grid,algorithm); assert.equal(t.result.cost,6); assert.equal(t.result.path.length,7); assert.equal(t.frames[0].kind,'initial'); assert.equal(t.frames.at(-1).kind,'done'); assert.deepEqual(t.frames.at(-1).path,t.result.path); } });
+check('all search methods produce legal paths', () => { for(const algorithm of ['astar','bfs','dfs','ucs','dijkstra','greedy']) { const r=api.search(grid,algorithm).result; assert.equal(r.path[0],grid.start); assert.equal(r.path.at(-1),grid.goal); let cost=0; for(let i=1;i<r.path.length;i++){ const a=r.path[i-1],b=r.path[i]; assert.equal(Math.abs(a%5-b%5)+Math.abs(Math.floor(a/5)-Math.floor(b/5)),1); cost+=api.TERRAIN_COST[grid.cells[b]]; } assert.equal(r.cost,cost); } });
+check('Dijkstra settles every reachable node after reaching goal', () => { const r=api.search(graph,'dijkstra').result; assert.equal(r.cost,2); assert.equal(r.distances.d,4); assert.equal(r.expanded,4); assert.equal(r.distances.e,undefined); assert.deepEqual(r.path,['a','c','b']); });
+check('A* admissible heuristics agree with UCS on geometric graph', () => { for(const heuristic of ['zero','manhattan','euclidean']) assert.equal(api.search(graph,'astar',heuristic).result.cost,2); });
+check('unreachable target returns empty path and infinity', () => { const r=api.search({...graph,goal:'e'},'astar').result; assert.equal(r.found,false); assert.equal(r.cost,Infinity); assert.deepEqual(r.path,[]); });
+check('start equals goal has zero cost', () => { for(const algorithm of ['astar','bfs','dfs','ucs','dijkstra','greedy']) { const r=api.search({...graph,goal:'a'},algorithm).result; assert.equal(r.cost,0); assert.deepEqual(r.path,['a']); } });
+check('Prim and Kruskal produce disconnected minimum spanning forest', () => { for(const algorithm of ['prim','kruskal']) { const t=api.mst(graph,algorithm); assert.equal(t.result.cost,4); assert.equal(t.result.components,2); assert.equal(t.result.selected.length,3); assert.equal(t.frames.at(-1).kind,'done'); } assert.ok(api.mst(graph,'kruskal').frames.some(f=>f.rejected)); assert.equal(api.mst(graph,'prim').frames.filter(f=>f.kind==='component').length,2); });
+check('zero weights and parallel edges work', () => { const b={...graph,nodes:graph.nodes.slice(0,2),edges:[{id:'x',a:'a',b:'b',weight:2},{id:'y',a:'a',b:'b',weight:0}]}; assert.equal(api.search(b,'astar').result.cost,0); assert.equal(api.mst(b,'prim').result.cost,0); assert.equal(api.mst(b,'kruskal').result.cost,0); });
+check('invalid negative weights are rejected', () => assert.throws(()=>api.search({...graph,edges:[{id:'bad',a:'a',b:'b',weight:-1}]})));
+check('metrics derive frontier size and work from trace', () => { const t=api.search(grid,'astar'),m=api.metrics(t); assert.equal(m.cost,6); assert.equal(m.steps,t.result.path.length-1); assert.equal(m.expanded,t.result.expanded); assert.equal(m.frameCount,t.frames.length); assert.ok(m.maxOpen>0); });
+console.log(`${checks} checks passed.`);
